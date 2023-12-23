@@ -55,5 +55,16 @@
     "vite": "^5.0.0",
     "vitest": "^0.34.6"
   },
-  "description": "An Ionic project"
+  "description": "An Ionic project",
+  "main": "webpack.config.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/obpeter/energycash-web.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/obpeter/energycash-web/issues"
+  },
+  "homepage": "https://github.com/obpeter/energycash-web#readme"
 }

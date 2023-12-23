@@ -77,6 +77,8 @@ import {
   fetchBillingRunById
 } from "../../store/billingRun";
 import {useSelector} from "react-redux";
+import DatePickerCoreElement from "../core/elements/DatePickerCore.element";
+import DatePicker from "react-datepicker";
 
 interface ParticipantPaneProps {
   // participants: EegParticipant[];
@@ -105,6 +107,11 @@ const ParticipantPaneComponent: FC<ParticipantPaneProps> = ({
   const billingRunIsFetching = useAppSelector(billingRunIsFetchingSelector);
   const selectBillIsFetching = useAppSelector(selectBillFetchingSelector);
   const billingRunErrorMessage = useAppSelector(billingRunErrorSelector);
+
+  let documentDatePreview : Date = new Date();
+  documentDatePreview.setHours(0,0,0,0);
+  let documentDateBilling : Date = new Date();
+  documentDateBilling.setHours(0,0,0,0);
 
   const [searchActive, setSearchActive] = useState(false);
   const [result, setResult] = useState<EegParticipant[]>([])
@@ -446,14 +453,16 @@ const ParticipantPaneComponent: FC<ParticipantPaneProps> = ({
     }
   }
 
-  const onDoBilling = (preview : boolean) => {
+  const onDoBilling = (preview : boolean, documentDate : Date) => {
     if (activePeriod) {
+      documentDate?.setHours(12);
       const invoiceRequest = {
         allocations: buildAllocationMapFromSelected(),
         tenantId: tenant,
         preview: preview,
         clearingPeriodIdentifier: createPeriodIdentifier(activePeriod.type, activePeriod.year, activePeriod.segment),
-        clearingPeriodType: activePeriod.type} as ClearingPreviewRequest;
+        clearingPeriodType: activePeriod.type,
+        clearingDocumentDate: documentDate? documentDate.toISOString().substring(0,10) : documentDate} as ClearingPreviewRequest;
       dispatcher(
         fetchEnergyBills({tenant, invoiceRequest}))
         .then(() => {
@@ -466,6 +475,11 @@ const ParticipantPaneComponent: FC<ParticipantPaneProps> = ({
           }
         );
     }
+  }
+
+  const onUpdateDocumentDate = (name: string, value: any) => {
+    if (name === "documentDatePreview") documentDatePreview = value;
+    if (name === "documentDateBilling") documentDateBilling = value;
   }
 
   async function sendBilling (billingRunId : string) {
@@ -641,13 +655,19 @@ const ParticipantPaneComponent: FC<ParticipantPaneProps> = ({
                       <IonSpinner name="dots"></IonSpinner>
                   }
                   { !billingRunIsFetching && !billingRun &&
-                      <IonButton expand="block" disabled={activePeriod === undefined} onClick={() => onDoBilling(true)}>{`VORSCHAU ERSTELLEN`}</IonButton>
+                      <>
+                      <DatePickerCoreElement initialValue={documentDatePreview} name={"documentDatePreview"} label="Rechnungsdatum"
+                                             placeholder={"Datum"} onChange={onUpdateDocumentDate} />
+                      <IonButton expand="block" disabled={activePeriod === undefined} onClick={() => onDoBilling(true, documentDatePreview)}>{`VORSCHAU ERSTELLEN`}</IonButton>
+                      </>
                   }
                   { !billingRunIsFetching && billingRunStatus === 'NEW' &&
                       <>
                         { "Vorschau (" + reformatDateTimeStamp(billingRun.runStatusDateTime) + ")"}
-                        <IonButton expand="block" disabled={activePeriod === undefined} onClick={() => onDoBilling(true)}>{`VORSCHAU AKTUALISIEREN`}</IonButton>
-                        <IonButton expand="block" disabled={activePeriod === undefined} onClick={() => onDoBilling(false)}>{`ABRECHNUNG DURCHFÜHREN (${billingInfo.length})`}</IonButton>
+                        <DatePickerCoreElement initialValue={documentDateBilling} name={"documentDateBilling"} label="Rechnungsdatum"
+                                               placeholder={"Datum"} onChange={onUpdateDocumentDate}/>
+                        <IonButton expand="block" disabled={activePeriod === undefined} onClick={() => onDoBilling(true, documentDateBilling)}>{`VORSCHAU AKTUALISIEREN`}</IonButton>
+                        <IonButton expand="block" disabled={activePeriod === undefined} onClick={() => onDoBilling(false, documentDateBilling)}>{`ABRECHNUNG DURCHFÜHREN (${billingInfo.length})`}</IonButton>
                       </>
                   }
                   { !billingRunIsFetching && billingRunStatus === 'DONE' &&
